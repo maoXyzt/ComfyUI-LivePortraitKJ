@@ -240,6 +240,7 @@ class LivePortraitPipeline(object):
                         x_s, combined_lip_ratio_tensor
                     )
 
+                x_d_i_new_cp = x_d_i_new.detach().clone()
                 if relative_motion_mode != "off":  # use x_s
                     x_d_i_new = (
                         x_s
@@ -271,6 +272,14 @@ class LivePortraitPipeline(object):
 
                 if inference_cfg.flag_stitching:
                     x_d_i_new = self.live_portrait_wrapper.stitching(x_s, x_d_i_new)
+
+                    # to keep eyebrow keypoints
+                    if relative_motion_mode != "off":
+                        x_d_i_new_cp = self.live_portrait_wrapper.stitching(x_s, x_d_i_new_cp)
+                        if inference_cfg.flag_lip_retargeting and not inference_cfg.flag_eye_retargeting:
+                            x_d_i_new[:, :14, :] = x_d_i_new_cp[:, :14, :].clone()
+                        else:
+                            x_d_i_new[:, :8, :] = x_d_i_new_cp[:, :8, :].clone()
 
             if inference_cfg.flag_stitching:
                 x_d_i_new = self.live_portrait_wrapper.stitching(x_s, x_d_i_new)
